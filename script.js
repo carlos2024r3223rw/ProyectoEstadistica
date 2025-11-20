@@ -18,20 +18,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function processData() {
         let data = dataInput.value.trim();
         if (!data) {
-            alert('Porfavor ingrese un archivo.');
+            alert('Por favor ingrese datos.');
             return;
         }
 
         // Parse data
         const numbers = parseData(data);
         if (numbers.length === 0) {
-            alert('No se encontraron números válidos en la entrada.');
+            alert('No se encontraron números válidos.');
             return;
         }
 
         // Calculate frequency distribution
         const frequencyData = calculateFrequencyDistribution(numbers);
-
+        
         // Display table
         displayTable(frequencyData);
 
@@ -41,14 +41,84 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFileUpload(event) {
         const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                dataInput.value = e.target.result;
-            };
-            reader.readAsText(file);
+        if (!file) return;
+
+        const fileName = file.name.toLowerCase();
+
+        if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) {
+            readTextFile(file);
+        } 
+        else if (fileName.endsWith('.docx')) {
+            readDocxFile(file);
+        }
+        else if (fileName.endsWith('.xlsx')) {
+            readExcelFile(file);
+        }
+        else if (fileName.endsWith('.pdf')) {
+            readPdfFile(file);
+        } 
+        else {
+            alert('Formato no soportado.');
         }
     }
+
+    function readDocxFile(file) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const arrayBuffer = e.target.result;
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                dataInput.value = result.value;
+            } catch (error) {
+                alert("Error al leer el archivo .docx");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function readExcelFile(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+
+            let extractedData = [];
+
+            workbook.SheetNames.forEach(sheetName => {
+                const sheet = workbook.Sheets[sheetName];
+                const csv = XLSX.utils.sheet_to_csv(sheet);
+                extractedData.push(csv);
+            });
+
+            dataInput.value = extractedData.join("\n");
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function readPdfFile(file) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const typedArray = new Uint8Array(e.target.result);
+
+            try {
+                const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                let fullText = "";
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    const pageText = content.items.map(item => item.str).join(" ");
+                    fullText += pageText + "\n";
+                }
+
+                dataInput.value = fullText;
+            } catch (error) {
+                alert("Error al leer el archivo PDF");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
 
     function parseData(data) {
         return data.split(/[\s,]+/).map(item => {
@@ -59,29 +129,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function calculateFrequencyDistribution(numbers) {
         const n = numbers.length;
-        const k = Math.ceil(1 + 3.322 * Math.log10(n)); 
+        const k = Math.ceil(1 + 3.322 * Math.log10(n));
         const min = Math.min(...numbers);
         const max = Math.max(...numbers);
         const range = max - min;
         const classWidth = Math.ceil(range / k);
 
         const classes = [];
-        let cumulativeFreq = 0;
+        let cumulativeAnterior = 0;
 
         for (let i = 0; i < k; i++) {
+
             const lowerBound = min + i * classWidth;
             const upperBound = min + (i + 1) * classWidth;
+
             const absFreq = numbers.filter(num => num >= lowerBound && num < upperBound).length;
-            cumulativeFreq += absFreq;
-            const relFreq = absFreq / n;
-            const cumFreq = cumulativeFreq / n;
+
+            const puntoMedio = (lowerBound + upperBound) / 2;
+
+            cumulativeAnterior += absFreq;
 
             classes.push({
                 interval: `${lowerBound.toFixed(2)} - ${upperBound.toFixed(2)}`,
                 absolute: absFreq,
-                relative: relFreq.toFixed(4),
-                cumulative: cumFreq.toFixed(4)
+                relative: (absFreq / n).toFixed(4),
+                cumulativeAnterior: cumulativeAnterior,
+                puntoMedio: puntoMedio.toFixed(2)
             });
+        }
+
+        // Frecuencia acumulada posterior
+        let cumulativePosterior = n;
+        for (let i = 0; i < classes.length; i++) {
+            classes[i].cumulativePosterior = cumulativePosterior;
+            cumulativePosterior -= classes[i].absolute;
         }
 
         return classes;
@@ -93,9 +174,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${row.interval}</td>
+                <td>${row.puntoMedio}</td>
                 <td>${row.absolute}</td>
                 <td>${row.relative}</td>
-                <td>${row.cumulative}</td>
+                <td>${row.cumulativeAnterior}</td>
+                <td>${row.cumulativePosterior}</td>
             `;
             frequencyTable.appendChild(tr);
         });
@@ -106,7 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const absFreq = data.map(item => item.absolute);
         const relFreq = data.map(item => parseFloat(item.relative));
 
-        // Bar Chart
         if (barChart) barChart.destroy();
         barChart = new Chart(document.getElementById('barChart'), {
             type: 'bar',
@@ -114,13 +196,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: labels,
                 datasets: [{
                     label: 'Frecuencia Absoluta',
-                    data: absFreq,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
+                    data: absFreq
                 }]
             },
-            options: {
+            options:  {
                 responsive: true,
                 maintainAspectRatio: true,
                 scales: {
@@ -200,21 +279,19 @@ document.addEventListener('DOMContentLoaded', function() {
         function addImageToPDF(canvas, yPos) {
             const imgData = canvas.toDataURL('image/png');
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
+
             if (yPos + imgHeight > pageHeight) {
                 doc.addPage();
                 yPos = 10;
             }
-            
+
             doc.addImage(imgData, 'PNG', 10, yPos, imgWidth, imgHeight);
             return yPos + imgHeight + 10;
         }
 
-        html2canvas(document.querySelector('.results-section'), { 
-            scale: 2, 
+        html2canvas(document.querySelector('.results-section'), { scale: 2, 
             useCORS: true,
-            backgroundColor: '#ffffff'
-        }).then(tableCanvas => {
+            backgroundColor: '#ffffff' }).then(tableCanvas => {
             yPosition = addImageToPDF(tableCanvas, yPosition);
 
             const barCanvas = document.getElementById('barChart');
@@ -226,26 +303,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const histCanvas = document.getElementById('histogram');
             addImageToPDF(histCanvas, yPosition);
 
-            doc.save('Distribucion de frecuencia.pdf');
-        }).catch(error => {
-            console.error('Error generando el PDF:', error);
-            alert('Error generando el PDF. Por favor intente de nuevo.');
+            doc.save('Distribucion_de_frecuencia.pdf');
         });
     }
 
     function exportAsExcel() {
         const table = document.getElementById('frequencyTable');
         const wb = XLSX.utils.table_to_book(table);
-        XLSX.writeFile(wb, 'distribucion de frecuencia.xlsx');
+        XLSX.writeFile(wb, 'distribucion_de_frecuencia.xlsx');
     }
 
     function exportAsImage() {
-
         const container = document.querySelector('.container');
-        
 
         setTimeout(() => {
-
             const tempDiv = document.createElement('div');
             tempDiv.style.position = 'absolute';
             tempDiv.style.left = '-9999px';
@@ -279,25 +350,22 @@ document.addEventListener('DOMContentLoaded', function() {
             tempDiv.appendChild(histImg);
 
             setTimeout(() => {
-                html2canvas(tempDiv, {
-                    scale: 2,
+                html2canvas(tempDiv, { scale: 2,
                     useCORS: true,
                     allowTaint: false,
                     backgroundColor: '#ffffff',
                     logging: false,
                     width: tempDiv.scrollWidth,
-                    height: tempDiv.scrollHeight
-                }).then(canvas => {
+                    height: tempDiv.scrollHeight }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = 'distribucion de frecuencia.png';
+                    link.download = 'distribucion_de_frecuencia.png';
                     link.href = canvas.toDataURL('image/png');
                     link.click();
-                    
-                    // Limpiar
+
                     document.body.removeChild(tempDiv);
                 }).catch(error => {
                     console.error('Error capturando la imagen:', error);
-                    alert('Error exportando la iamgen. Porfavor pruebe de nuevo.');
+                    alert('Error exportando la imagen. Porfavor pruebe de nuevo.');
                     document.body.removeChild(tempDiv);
                 });
             }, 500);

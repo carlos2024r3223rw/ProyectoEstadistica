@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,32 +9,40 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.11/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>Generador de distribución de frecuencia</h1>
+
         <div class="input-section">
             <h2>Entrada de datos</h2>
-            <textarea id="dataInput" placeholder="Introduzca datos numéricos separados por comas o con espacios"></textarea>
-            <input type="file" id="fileInput" accept=".csv,.txt">
+            <textarea id="dataInput" placeholder="Introduzca datos numéricos separados por coma o espacios"></textarea>
+            <input type="file" id="fileInput" accept=".txt,.csv,.docx,.xlsx,.pdf">
             <button id="processBtn">Procesar Datos</button>
         </div>
+
         <div class="results-section">
             <h2>Tabla de distribución de frecuencias</h2>
             <table id="frequencyTable">
                 <thead>
                     <tr>
-                        <th>Intervalo de Clase</th>
-                        <th>frecuencia Absoluta</th>
+                        <th>Intervalo</th>
+                        <th>Punto Medio</th>
+                        <th>Frecuencia Absoluta</th>
                         <th>Frecuencia Relativa</th>
-                        <th>Frecuencia Acumulada</th>
+                        <th>Frecuencia Acumulada Anterior</th>
+                        <th>Frecuencia Acumulada Posterior</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </div>
+
         <div class="charts-section">
-            <h2>Graficos de Estadistica</h2>
+            <h2>Gráficos Estadísticos</h2>
             <div class="chart-container">
                 <canvas id="barChart"></canvas>
             </div>
@@ -45,13 +53,15 @@
                 <canvas id="histogram"></canvas>
             </div>
         </div>
+
         <div class="export-section">
             <h2>Exportar Resultados</h2>
-            <button id="exportPDF">Exportar como PDF</button>
-            <button id="exportExcel">Exportar como EXCEL</button>
-            <button id="exportImage">Exportar como Imagen</button>
+            <button id="exportPDF">Exportar PDF</button>
+            <button id="exportExcel">Exportar Excel</button>
+            <button id="exportImage">Exportar Imagen</button>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
