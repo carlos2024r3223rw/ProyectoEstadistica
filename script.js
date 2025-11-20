@@ -137,7 +137,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const classes = [];
         let cumulativeAnterior = 0;
-
+        document.getElementById('numClases').textContent = k;
+        document.getElementById('amplitudClase').textContent = classWidth;
+        document.getElementById('rango').textContent = range.toFixed(2);
         for (let i = 0; i < k; i++) {
 
             const lowerBound = min + i * classWidth;
@@ -247,6 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: labels,
                 datasets: [{
+                    barPercentage: 1.0,
+                    categoryPercentage: 1.0,
                     label: 'Frecuencia',
                     data: absFreq,
                     backgroundColor: 'rgba(153, 102, 255, 0.6)',
