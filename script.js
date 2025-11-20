@@ -306,15 +306,92 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const histCanvas = document.getElementById('histogram');
             addImageToPDF(histCanvas, yPosition);
+            doc.setFontSize(12);
+            doc.text(`Número de clases: ${document.getElementById('numClases').textContent}`, 10, yPosition + 10);
+            doc.text(`Amplitud de clase: ${document.getElementById('amplitudClase').textContent}`, 10, yPosition + 20);
+            doc.text(`Rango: ${document.getElementById('rango').textContent}`, 10, yPosition + 30);
+
+            yPosition += 40;
 
             doc.save('Distribucion_de_frecuencia.pdf');
         });
     }
 
-    function exportAsExcel() {
-        const table = document.getElementById('frequencyTable');
-        const wb = XLSX.utils.table_to_book(table);
-        XLSX.writeFile(wb, 'distribucion_de_frecuencia.xlsx');
+    async function exportAsExcel() {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Distribución");
+
+        // --- 1. EXPORTAR TABLA ---
+        const table = document.querySelector("#frequencyTable");
+
+        // Leer encabezados
+        const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.innerText);
+        // Agregar datos calculados arriba en el Excel
+        sheet.addRow(["Número de clases:", document.getElementById('numClases').textContent]);
+        sheet.addRow(["Amplitud de clase:", document.getElementById('amplitudClase').textContent]);
+        sheet.addRow(["Rango:", document.getElementById('rango').textContent]);
+        sheet.addRow([]); // fila vacía
+
+        sheet.addRow(headers);
+
+        // Leer filas
+        const rows = table.querySelectorAll("tbody tr");
+        rows.forEach(tr => {
+            const row = Array.from(tr.querySelectorAll("td")).map(td => td.innerText);
+            sheet.addRow(row);
+        });
+
+        // --- 2. EXPORTAR GRÁFICOS COMO IMÁGENES ---
+        const barCanvas = document.getElementById("barChart");
+        const pieCanvas = document.getElementById("pieChart");
+        const histCanvas = document.getElementById("histogram");
+
+        const barImg = barCanvas.toDataURL("image/png").split(',')[1];
+        const pieImg = pieCanvas.toDataURL("image/png").split(',')[1];
+        const histImg = histCanvas.toDataURL("image/png").split(',')[1];
+
+        const barImageId = workbook.addImage({
+            base64: barImg,
+            extension: "png"
+        });
+
+        const pieImageId = workbook.addImage({
+            base64: pieImg,
+            extension: "png"
+        });
+
+        const histImageId = workbook.addImage({
+            base64: histImg,
+            extension: "png"
+        });
+
+        // Posicionar imágenes (filas y columnas)
+        sheet.addImage(barImageId, {
+            tl: { col: 0, row: rows.length + 6 },
+            ext: { width: 600, height: 300 }
+        });
+
+        sheet.addImage(pieImageId, {
+            tl: { col: 0, row: rows.length + 23 },
+            ext: { width: 600, height: 300 }
+        });
+
+        sheet.addImage(histImageId, {
+            tl: { col: 0, row: rows.length + 40 },
+            ext: { width: 600, height: 300 }
+        });
+
+        // --- 3. GENERAR ARCHIVO ---
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        const blob = new Blob([buffer], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        });
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "distribucion_de_frecuencia.xlsx";
+        link.click();
     }
 
     function exportAsImage() {
@@ -327,6 +404,15 @@ document.addEventListener('DOMContentLoaded', function() {
             tempDiv.style.background = '#ffffff';
             tempDiv.style.padding = '20px';
             document.body.appendChild(tempDiv);
+
+            const summaryDiv = document.createElement('div');
+            summaryDiv.innerHTML = `
+                <h2>Datos Calculados</h2>
+                <p><strong>Número de clases:</strong> ${document.getElementById('numClases').textContent}</p>
+                <p><strong>Amplitud de clase:</strong> ${document.getElementById('amplitudClase').textContent}</p>
+                <p><strong>Rango:</strong> ${document.getElementById('rango').textContent}</p>
+            `;
+            tempDiv.appendChild(summaryDiv);
 
             const tableClone = document.querySelector('.results-section').cloneNode(true);
             tempDiv.appendChild(tableClone);
