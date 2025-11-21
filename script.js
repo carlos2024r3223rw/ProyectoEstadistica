@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() { //ejecutar cuando cargue la página
-    //se declaran variables elementos extraidos del hml 
+    //se declaran variables elementos extraidos del html 
     const dataInput = document.getElementById('dataInput');
     const fileInput = document.getElementById('fileInput');
     const processBtn = document.getElementById('processBtn');
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() { //ejecutar cuando car
         }).filter(num => num !== null).sort((a, b) => a - b);
     }
 
-    //
+    //Construir toda la tabla de distribución de frecuencias a partir de una lista de números.
     function calculateFrequencyDistribution(numbers) {
         const n = numbers.length;
         const k = Math.ceil(1 + 3.322 * Math.log10(n));
@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', function() { //ejecutar cuando car
         return classes;
     }
 
+    //Mostrar en la tabla HTML toda la información de la distribución de frecuencias procesadas
     function displayTable(data) {
         frequencyTable.innerHTML = '';
         data.forEach(row => {
@@ -194,6 +195,7 @@ document.addEventListener('DOMContentLoaded', function() { //ejecutar cuando car
         });
     }
 
+    //carga los graficos
     function renderCharts(data) {
         const labels = data.map(item => item.interval);
         const absFreq = data.map(item => item.absolute);
