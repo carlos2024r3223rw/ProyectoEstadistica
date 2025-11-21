@@ -214,14 +214,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-
         if (pieChart) pieChart.destroy();
+
+        // Calcular grados del pastel
+        const totalDatos = data.reduce((acc, item) => acc + item.absolute, 0);
+        const grados = data.map(item => (item.absolute * 360) / totalDatos);
+
         pieChart = new Chart(document.getElementById('pieChart'), {
             type: 'pie',
             data: {
                 labels: labels,
                 datasets: [{
-                    data: relFreq,
+                    data: grados,
                     backgroundColor: [
                         'rgba(255, 99, 132, 0.6)',
                         'rgba(54, 162, 235, 0.6)',
@@ -242,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+
 
         if (histogram) histogram.destroy();
         histogram = new Chart(document.getElementById('histogram'), {
