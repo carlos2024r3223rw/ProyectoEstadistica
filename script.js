@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() { //ejecutar cuando cargue la página
+    //se declaran variables elementos extraidos del hml 
     const dataInput = document.getElementById('dataInput');
     const fileInput = document.getElementById('fileInput');
     const processBtn = document.getElementById('processBtn');
@@ -7,8 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportExcelBtn = document.getElementById('exportExcel');
     const exportImageBtn = document.getElementById('exportImage');
 
-    let barChart, pieChart, histogram;
+    let barChart, pieChart, histogram; //variables vacías que guardarán los gráfico
 
+    //se crean botones de evento, que ejecutaran algunas funciones despues
     processBtn.addEventListener('click', processData);
     fileInput.addEventListener('change', handleFileUpload);
     exportPDFBtn.addEventListener('click', exportAsPDF);
@@ -16,29 +18,30 @@ document.addEventListener('DOMContentLoaded', function() {
     exportImageBtn.addEventListener('click', exportAsImage);
 
     function processData() {
-        let data = dataInput.value.trim();
+        let data = dataInput.value.trim(); //optiene los datos de usuario
         if (!data) {
             alert('Por favor ingrese datos.');
             return;
         }
 
         // Parse data
-        const numbers = parseData(data);
+        const numbers = parseData(data); //Llama a una función llamada parseData() limpia el texto y extrae solo números
         if (numbers.length === 0) {
             alert('No se encontraron números válidos.');
             return;
         }
 
         // Calculate frequency distribution
-        const frequencyData = calculateFrequencyDistribution(numbers);
+        const frequencyData = calculateFrequencyDistribution(numbers); //se le pasa a la funciona calcualate...
         
         // Display table
-        displayTable(frequencyData);
+        displayTable(frequencyData); //Mostrar la tabla
 
         // Render charts
-        renderCharts(frequencyData);
+        renderCharts(frequencyData); //genera los graficos
     }
 
+    //recibir un archivo e identificar su tipo y enviar ese archivo a la función correcta para ser leído.
     function handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -62,6 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    //Leer un archivo .docx, extraer el texto y lo coloca en el input de datos
     function readDocxFile(file) {
         const reader = new FileReader();
         reader.onload = async function(e) {
@@ -76,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reader.readAsArrayBuffer(file);
     }
 
+    //este lee los archivos de excel
     function readExcelFile(file) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -95,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reader.readAsArrayBuffer(file);
     }
 
+    //lee los archivos pdf
     function readPdfFile(file) {
         const reader = new FileReader();
         reader.onload = async function(e) {
@@ -120,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
+    //funcion que limpia los archivos
     function parseData(data) {
         return data.split(/[\s,]+/).map(item => {
             const num = parseFloat(item.trim());
@@ -127,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).filter(num => num !== null).sort((a, b) => a - b);
     }
 
+    //
     function calculateFrequencyDistribution(numbers) {
         const n = numbers.length;
         const k = Math.ceil(1 + 3.322 * Math.log10(n));
